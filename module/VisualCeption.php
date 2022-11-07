@@ -438,6 +438,8 @@ class VisualCeption extends CodeceptionModule implements MultiSession
                 $fullShot->cropImage($coords['width'], $coords['height'], $coords['offset_x'], $coords['offset_y']);
                 $fullShot->writeImage($elementPath);
             }
+
+            $this->webDriver->executeScript("window.scrollTo(0, 0);");
         } else {
             $screenshotBinary = $this->webDriver->takeScreenshot();
 
@@ -447,8 +449,6 @@ class VisualCeption extends CodeceptionModule implements MultiSession
         }
 
         $this->resetHideElementsForScreenshot($excludeElements);
-
-        $this->webDriver->executeScript("window.scrollTo(0, 0);");
 
         return $elementPath;
     }
