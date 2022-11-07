@@ -448,6 +448,8 @@ class VisualCeption extends CodeceptionModule implements MultiSession
 
         $this->resetHideElementsForScreenshot($excludeElements);
 
+        $this->webDriver->executeScript("window.scrollTo(0, 0);");
+
         return $elementPath;
     }
 
