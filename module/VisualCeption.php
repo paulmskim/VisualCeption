@@ -29,9 +29,10 @@ class VisualCeption extends CodeceptionModule implements MultiSession
         'currentImageDir' => 'debug/visual/',
         'report' => false,
         'module' => 'WebDriver',
-        'fullScreenShot' => false
+        'fullScreenShot' => false,
+        'forceFullScreenShot' => false,
     ];
-    
+
     protected $saveCurrentImageIfFailure;
     private $referenceImageDir;
 
@@ -161,7 +162,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
 
         return null;
     }
-    
+
     /**
      * Get value of the private property $referenceImageDir
      *
@@ -179,7 +180,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      * @param string $identifier Identifies your test object
      * @param string $elementID DOM ID of the element, which should be screenshotted
      * @param string|array $excludeElements Element name or array of Element names, which should not appear in the screenshot
-     * @param float $deviation 
+     * @param float $deviation
      */
     public function seeVisualChanges($identifier, $elementID = null, $excludeElements = array(), $deviation = null)
     {
@@ -197,7 +198,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      * @param string $identifier identifies your test object
      * @param string $elementID DOM ID of the element, which should be screenshotted
      * @param string|array $excludeElements string of Element name or array of Element names, which should not appear in the screenshot
-     * @param float $deviation 
+     * @param float $deviation
      */
     public function dontSeeVisualChanges($identifier, $elementID = null, $excludeElements = array(), $deviation = null)
     {
@@ -411,7 +412,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
 
         $this->hideElementsForScreenshot($excludeElements);
 
-        if ($this->config["fullScreenShot"] == true) {
+        if ($this->config["fullScreenShot"] == true || $this->config["forceFullScreenShot"] == true) {
             $height = $this->webDriver->executeScript("var ele=document.querySelector('html'); return ele.scrollHeight;");
             list($viewportHeight, $devicePixelRatio) = $this->webDriver->executeScript("return [window.innerHeight, window.devicePixelRatio]");
 
@@ -430,8 +431,13 @@ class VisualCeption extends CodeceptionModule implements MultiSession
 
             $screenShotImage->resetIterator();
             $fullShot = $screenShotImage->appendImages(true);
-            $fullShot->writeImage($elementPath);
 
+            if ($this->config["fullScreenShot"] == true) {
+                $fullShot->writeImage($elementPath);
+            } else {
+                $fullShot->cropImage($coords['width'], $coords['height'], $coords['offset_x'], $coords['offset_y']);
+                $fullShot->writeImage($elementPath);
+            }
         } else {
             $screenshotBinary = $this->webDriver->takeScreenshot();
 
