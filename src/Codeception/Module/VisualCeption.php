@@ -1,12 +1,16 @@
 <?php
+declare(strict_types=1);
+
 namespace Codeception\Module;
 
 use Codeception\Lib\Interfaces\MultiSession;
+use Codeception\Configuration;
+use Codeception\Exception\ConfigurationException;
+use Codeception\Exception\ImageDeviationException;
 use Codeception\Module as CodeceptionModule;
 use Codeception\Test\Descriptor;
-use RemoteWebDriver;
-use Codeception\Module\VisualCeption\Utils;
 use Codeception\TestInterface;
+use Facebook\WebDriver\Remote\RemoteWebDriver;
 
 /**
  * Class VisualCeption
@@ -22,7 +26,8 @@ use Codeception\TestInterface;
  */
 class VisualCeption extends CodeceptionModule implements MultiSession
 {
-    protected $config = [
+
+    protected array $config = [
         'maximumDeviation' => 0,
         'saveCurrentImageIfFailure' => true,
         'referenceImageDir' => 'VisualCeption/',
@@ -33,48 +38,76 @@ class VisualCeption extends CodeceptionModule implements MultiSession
         'forceFullScreenShot' => false,
     ];
 
-    protected $saveCurrentImageIfFailure;
-    private $referenceImageDir;
+    /**
+     * @var bool
+     */
+    protected bool $saveCurrentImageIfFailure;
+
+    /**
+     * @var string
+     */
+    private string $referenceImageDir;
 
     /**
      * This var represents the directory where the taken images are stored
      * @var string
      */
-    private $currentImageDir;
-
-    private $maximumDeviation = 0;
+    private string $currentImageDir;
 
     /**
-     * @var RemoteWebDriver
+     * @var float
      */
-    private $webDriver = null;
+    private float $maximumDeviation = 0.0;
 
     /**
-     * @var WebDriver
+     * @var ?RemoteWebDriver
      */
-    private $webDriverModule = null;
+    private ?RemoteWebDriver $webDriver = null;
+
+    /**
+     * @var ?\Codeception\Module\WebDriver
+     */
+    private ?WebDriver $webDriverModule = null;
 
     /**
      * @var Utils
      */
-    private $utils;
+    private Utils $utils;
 
     /**
      * @var TestInterface
      */
-    private $test;
+    private TestInterface $test;
+
+    /**
+     * @var ?string
+     */
+    private ?string $currentEnvironment;
+
+    /**
+     * @var array
+     */
+    private array $failed = [];
 
     /**
      * @var string
      */
-    private $currentEnvironment;
+    private string $logFile;
 
-    private $failed = array();
-    private $logFile;
-    private $templateVars = array();
-    private $templateFile;
+    /**
+     * @var array
+     */
+    private array $templateVars = [];
 
-    public function _initialize()
+    /**
+     * @var string
+     */
+    private string $templateFile;
+
+    /**
+     * @return void
+     */
+    public function _initialize(): void
     {
         $this->utils = new Utils();
 
@@ -84,18 +117,21 @@ class VisualCeption extends CodeceptionModule implements MultiSession
 
         if (!is_dir($this->referenceImageDir)) {
             $this->debug("Creating directory: $this->referenceImageDir");
-            @mkdir($this->referenceImageDir, 0777, true);
+            if (!mkdir($concurrentDirectory = $this->referenceImageDir, 0777, true) && !is_dir($concurrentDirectory)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+            }
         }
         $this->currentImageDir = codecept_output_dir() . $this->config["currentImageDir"];
     }
 
-    public function _beforeSuite($settings = [])
+    public function _beforeSuite($settings = []): void
     {
-        $this->currentEnvironment = key_exists('current_environment', $settings) ? $settings['current_environment'] : null;
+        $this->currentEnvironment = $settings['current_environment'] ?? null;
+
         $this->_initVisualReport();
     }
 
-    public function _afterSuite()
+    public function _afterSuite(): void
     {
         if (!$this->config['report']) {
             return;
@@ -110,12 +146,15 @@ class VisualCeption extends CodeceptionModule implements MultiSession
         $reportContent = ob_get_contents();
         ob_end_clean();
 
-        $this->debug("Trying to store file (".$this->logFile.")");
+        $this->debug("Trying to store file (" . $this->logFile . ")");
         file_put_contents($this->logFile, $reportContent);
     }
 
 
-    public function _failed(TestInterface $test, $fail)
+    /**
+     * @throws \JsonException
+     */
+    public function _failed(TestInterface $test, $fail): void
     {
         if ($fail instanceof ImageDeviationException) {
             $this->failed[Descriptor::getTestSignatureUnique($test) . '.' . $fail->getIdentifier()] = $fail;
@@ -129,15 +168,15 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      * @param TestInterface $test
      * @throws \Exception
      */
-    public function _before(TestInterface $test)
+    public function _before(TestInterface $test): void
     {
         $browserModule = $this->getBrowserModule();
 
         if ($browserModule === null) {
-            throw new \Codeception\Exception\ConfigurationException("VisualCeption uses the WebDriver. Please ensure that this module is activated.");
+            throw new ConfigurationException("VisualCeption uses the WebDriver. Please ensure that this module is activated.");
         }
         if (!class_exists('Imagick')) {
-            throw new \Codeception\Exception\ConfigurationException("VisualCeption requires ImageMagick PHP Extension but it was not installed");
+            throw new ConfigurationException("VisualCeption requires ImageMagick PHP Extension but it was not installed");
         }
 
         $this->webDriverModule = $browserModule;
@@ -146,16 +185,21 @@ class VisualCeption extends CodeceptionModule implements MultiSession
         $this->test = $test;
     }
 
-    protected function getBrowserModule() {
+    /**
+     * @return \Codeception\Module|\Facebook\WebDriver\WebDriver|null
+     * @throws \Codeception\Exception\ModuleException
+     */
+    protected function getBrowserModule(): CodeceptionModule|WebDriver|null
+    {
         if ($this->hasModule($this->config['module'])) {
             return $this->getModule($this->config['module']);
         }
 
-        foreach($this->getModules() as $module) {
-            if($module === $this) {
+        foreach ($this->getModules() as $module) {
+            if ($module === $this) {
                 continue;
             }
-            if($module instanceof WebDriver) {
+            if ($module instanceof WebDriver) {
                 return $module;
             }
         }
@@ -168,10 +212,10 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      *
      * @return string Path to reference image dir
      */
-    public function getReferenceImageDir()
-	{
-		return $this->referenceImageDir;
-	}
+    public function getReferenceImageDir(): string
+    {
+        return $this->referenceImageDir;
+    }
 
     /**
      * Compare the reference image with a current screenshot, identified by their indentifier name
@@ -182,7 +226,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      * @param string|array $excludeElements Element name or array of Element names, which should not appear in the screenshot
      * @param float $deviation
      */
-    public function seeVisualChanges($identifier, $elementID = null, $excludeElements = array(), $deviation = null)
+    public function seeVisualChanges($identifier, $elementID = null, $excludeElements = [], $deviation = null): void
     {
         $this->compareVisualChanges($identifier, $elementID, $excludeElements, $deviation, true);
 
@@ -196,11 +240,11 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      * and their element ID.
      *
      * @param string $identifier identifies your test object
-     * @param string $elementID DOM ID of the element, which should be screenshotted
+     * @param string|null $elementID DOM ID of the element, which should be screenshotted
      * @param string|array $excludeElements string of Element name or array of Element names, which should not appear in the screenshot
-     * @param float $deviation
+     * @param float|null $deviation
      */
-    public function dontSeeVisualChanges($identifier, $elementID = null, $excludeElements = array(), $deviation = null)
+    public function dontSeeVisualChanges(string $identifier, string $elementID = null, array|string $excludeElements = [], float $deviation = null): void
     {
         $this->compareVisualChanges($identifier, $elementID, $excludeElements, $deviation, false);
 
@@ -208,11 +252,19 @@ class VisualCeption extends CodeceptionModule implements MultiSession
         $this->assertTrue(true);
     }
 
-    private function compareVisualChanges($identifier, $elementID, $excludeElements, $deviation, $seeChanges)
+    /**
+     * @param $identifier
+     * @param $elementID
+     * @param $excludeElements
+     * @param $deviation
+     * @param $seeChanges
+     * @return void
+     */
+    private function compareVisualChanges($identifier, $elementID, $excludeElements, $deviation, $seeChanges): void
     {
-        $excludeElements = (array) $excludeElements;
+        $excludeElements = (array)$excludeElements;
 
-        $maximumDeviation = (!$deviation && !is_numeric($deviation)) ? $this->maximumDeviation : (float) $deviation;
+        $maximumDeviation = (!$deviation && !is_numeric($deviation)) ? $this->maximumDeviation : (float)$deviation;
 
         $deviationResult = $this->getDeviation($identifier, $elementID, $excludeElements);
 
@@ -220,31 +272,35 @@ class VisualCeption extends CodeceptionModule implements MultiSession
             return;
         }
 
-        if ($seeChanges && $deviationResult["deviation"] <= $maximumDeviation ||
-                !$seeChanges && $deviationResult["deviation"] > $maximumDeviation) {
+        if (($seeChanges && $deviationResult["deviation"] <= $maximumDeviation) || (!$seeChanges && $deviationResult["deviation"] > $maximumDeviation)) {
             $compareScreenshotPath = $this->getDeviationScreenshotPath($identifier);
             $deviationResult["deviationImage"]->writeImage($compareScreenshotPath);
-
             throw $this->createImageDeviationException($identifier, $compareScreenshotPath, $deviationResult["deviation"], $seeChanges);
         }
     }
 
-    private function createImageDeviationException($identifier, $compareScreenshotPath, $deviation, $seeChanges)
+    /**
+     * @param $identifier
+     * @param $compareScreenshotPath
+     * @param $deviation
+     * @param $seeChanges
+     * @return \Codeception\Exception\ImageDeviationException
+     */
+    private function createImageDeviationException($identifier, $compareScreenshotPath, $deviation, $seeChanges): ImageDeviationException
     {
+        $message = "The deviation of the taken screenshot is too high";
         if ($seeChanges) {
             $message = "The deviation of the taken screenshot is too low";
-        } else {
-            $message = "The deviation of the taken screenshot is too high";
         }
 
-        $message .=  " (" . $deviation . "%).\nSee $compareScreenshotPath for a deviation screenshot.";
+        $message .= " ({$deviation}%) \nSee {$compareScreenshotPath} for a deviation screenshot.";
 
         return new ImageDeviationException(
-                $message,
-                $identifier,
-                $this->getExpectedScreenshotPath($identifier),
-                $this->getScreenshotPath($identifier),
-                $compareScreenshotPath
+            $message,
+            $identifier,
+            $this->getExpectedScreenshotPath($identifier),
+            $this->getScreenshotPath($identifier),
+            $compareScreenshotPath
         );
     }
 
@@ -253,7 +309,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      *
      * @param $elementSelector String of CSS Element selector, set visibility to hidden
      */
-    private function hideElement($elementSelector)
+    private function hideElement($elementSelector): void
     {
         $this->setVisibility($elementSelector, false);
     }
@@ -263,15 +319,15 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      *
      * @param $elementSelector String of CSS Element selector, set visibility to visible
      */
-    private function showElement($elementSelector)
+    private function showElement($elementSelector): void
     {
         $this->setVisibility($elementSelector, true);
     }
 
-    private function setVisibility($elementSelector, $isVisible)
+    private function setVisibility($elementSelector, $isVisible): void
     {
-      $styleVisibility = $isVisible ? 'visible' : 'hidden';
-      $this->webDriver->executeScript('
+        $styleVisibility = $isVisible ? 'visible' : 'hidden';
+        $this->webDriver->executeScript('
             var elements = [];
             elements = document.querySelectorAll("' . $elementSelector . '");
             if( elements.length > 0 ) {
@@ -291,7 +347,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      * @param array $excludeElements Element names, which should not appear in the screenshot
      * @return array Includes the calculation of deviation in percent and the diff-image
      */
-    private function getDeviation($identifier, $elementID, array $excludeElements = array())
+    private function getDeviation($identifier, $elementID, array $excludeElements = []): array
     {
         $coords = $this->getCoordinates($elementID);
         $this->createScreenshot($identifier, $coords, $excludeElements);
@@ -300,9 +356,9 @@ class VisualCeption extends CodeceptionModule implements MultiSession
 
         $deviation = $compareResult[1] * 100;
 
-        $this->debug("The deviation between the images is ". $deviation . " percent");
+        $this->debug("The deviation between the images is " . $deviation . " percent");
 
-        return array (
+        return array(
             "deviation" => $deviation,
             "deviationImage" => $compareResult[0],
             "currentImage" => $compareResult['currentImage'],
@@ -398,13 +454,16 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      * @param array $coords Coordinates where the DOM element is located
      * @param array $excludeElements List of elements, which should not appear in the screenshot
      * @return string Path of the current screenshot image
+     * @throws \ImagickException
      */
-    private function createScreenshot($identifier, array $coords, array $excludeElements = array())
+    private function createScreenshot($identifier, array $coords, array $excludeElements = [])
     {
-        $screenShotDir = \Codeception\Configuration::logDir() . 'debug/';
+        $screenShotDir = Configuration::outputDir() . 'debug/';
 
         if (!is_dir($screenShotDir)) {
-            mkdir($screenShotDir, 0777, true);
+            if (!mkdir($screenShotDir, 0777, true) && !is_dir($screenShotDir)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $screenShotDir));
+            }
         }
 
         $elementPath = $this->getScreenshotPath($identifier);
@@ -412,13 +471,13 @@ class VisualCeption extends CodeceptionModule implements MultiSession
 
         $this->hideElementsForScreenshot($excludeElements);
 
-        if ($this->config["fullScreenShot"] == true || $this->config["forceFullScreenShot"] == true) {
+        if ($this->config["fullScreenShot"] === true || $this->config["forceFullScreenShot"] === true) {
             $height = $this->webDriver->executeScript("var ele=document.querySelector('html'); return ele.scrollHeight;");
             list($viewportHeight, $devicePixelRatio) = $this->webDriver->executeScript("return [window.innerHeight, window.devicePixelRatio]");
 
             $itr = $height / $viewportHeight;
 
-            for ($i = 0; $i < intval($itr); $i++) {
+            for ($i = 0; $i < (int)$itr; $i++) {
                 $screenshotBinary = $this->webDriver->takeScreenshot();
                 $screenShotImage->readimageblob($screenshotBinary);
                 $this->webDriver->executeScript("window.scrollBy(0, {$viewportHeight});");
@@ -432,19 +491,18 @@ class VisualCeption extends CodeceptionModule implements MultiSession
             $screenShotImage->resetIterator();
             $fullShot = $screenShotImage->appendImages(true);
 
-            if ($this->config["fullScreenShot"] == true) {
-                $fullShot->writeImage($elementPath);
-            } else {
-                $fullShot->cropImage($coords['width'], $coords['height'], $coords['offset_x'], $coords['offset_y']);
-                $fullShot->writeImage($elementPath);
+            if ($this->config["fullScreenShot"] !== true) {
+                $fullShot->cropImage((int)$coords['width'], (int)$coords['height'], (int)$coords['offset_x'], (int)$coords['offset_y']);
             }
+            $fullShot->writeImage($elementPath);
 
             $this->webDriver->executeScript("window.scrollTo(0, 0);");
+
         } else {
             $screenshotBinary = $this->webDriver->takeScreenshot();
 
             $screenShotImage->readimageblob($screenshotBinary);
-            $screenShotImage->cropImage($coords['width'], $coords['height'], $coords['offset_x'], $coords['offset_y']);
+            $screenShotImage->cropImage((int)$coords['width'], (int)$coords['height'], (int)$coords['offset_x'], (int)$coords['offset_y']);
             $screenShotImage->writeImage($elementPath);
         }
 
@@ -489,10 +547,10 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      * @param $identifier identifies your test object
      * @return string Path of the deviation image
      */
-    private function getDeviationScreenshotPath ($identifier, $alternativePrefix = '')
+    private function getDeviationScreenshotPath($identifier, $alternativePrefix = '')
     {
-        $debugDir = \Codeception\Configuration::logDir() . 'debug/';
-        $prefix = ( $alternativePrefix === '') ? 'compare' : $alternativePrefix;
+        $debugDir = Configuration::outputDir() . 'debug/';
+        $prefix = ($alternativePrefix === '') ? 'compare' : $alternativePrefix;
         return $debugDir . $prefix . $this->getScreenshotName($identifier);
     }
 
@@ -513,7 +571,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
         if (!file_exists($expectedImagePath)) {
             $this->debug("Copying image (from $currentImagePath to $expectedImagePath");
             copy($currentImagePath, $expectedImagePath);
-            return array (null, 0, 'currentImage' => null);
+            return array(null, 0, 'currentImage' => null);
         } else {
             return $this->compareImages($expectedImagePath, $currentImagePath);
         }
@@ -547,8 +605,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
             $result[0]->setImageFormat('png');
             $result['currentImage'] = clone $imagick2;
             $result['currentImage']->setImageFormat('png');
-        }
-        catch (\ImagickException $e) {
+        } catch (\ImagickException $e) {
             $this->debug("IMagickException! could not campare image1 ($image1) and image2 ($image2).\nExceptionMessage: " . $e->getMessage());
             $this->fail($e->getMessage() . ", image1 $image1 and image2 $image2.");
         }
@@ -564,24 +621,24 @@ class VisualCeption extends CodeceptionModule implements MultiSession
         if ($this->currentEnvironment) {
             $filename .= '.' . $this->currentEnvironment;
         }
-        $this->logFile = \Codeception\Configuration::logDir() . $filename . '.html';
+        $this->logFile = Configuration::outputDir() . $filename . '.html';
 
         if (array_key_exists('templateVars', $this->config)) {
             $this->templateVars = $this->config["templateVars"];
         }
 
         if (array_key_exists('templateFile', $this->config)) {
-            $this->templateFile = (file_exists($this->config["templateFile"]) ? "" : __DIR__ ) . $this->config["templateFile"];
+            $this->templateFile = (file_exists($this->config["templateFile"]) ? "" : __DIR__) . $this->config["templateFile"];
         } else {
-            $this->templateFile = __DIR__ . "/report/template.php";
+            $this->templateFile = __DIR__ . "/../Report/template.php";
         }
-        $this->debug( "VisualCeptionReporter: templateFile = " . $this->templateFile );
+        $this->debug("VisualCeptionReporter: templateFile = " . $this->templateFile);
     }
 
     /**
      * Get a new loaded module
      */
-    public function _initializeSession()
+    public function _initializeSession(): void
     {
         $browserModule = $this->getBrowserModule();
 
@@ -594,7 +651,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      *
      * @param $session
      */
-    public function _loadSession($session)
+    public function _loadSession($session): void
     {
         $this->webDriver = $session;
     }
@@ -609,7 +666,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
         return $this->webDriver;
     }
 
-    public function _closeSession($session = null)
+    public function _closeSession($session = null): void
     {
         // this method will never be needed
     }
