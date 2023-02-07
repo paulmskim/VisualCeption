@@ -1,10 +1,12 @@
 <?php
 
-namespace Codeception\Module;
-use PHPUnit\Framework\AssertionFailedError;
+namespace Codeception\Exception;
 
-class ImageDeviationException extends AssertionFailedError
+use PHPUnit\Framework\Exception;
+
+class ImageDeviationException extends Exception
 {
+
     private $identifier;
     private $expectedImage;
     private $currentImage;
@@ -12,10 +14,10 @@ class ImageDeviationException extends AssertionFailedError
 
     public function __construct($message, $identifier, $expectedImage, $currentImage, $deviationImage)
     {
-        $this->identifier = $identifier;
+        $this->identifier     = $identifier;
         $this->deviationImage = $deviationImage;
-        $this->currentImage = $currentImage;
-        $this->expectedImage = $expectedImage;
+        $this->currentImage   = $currentImage;
+        $this->expectedImage  = $expectedImage;
 
         parent::__construct($message);
     }
@@ -38,5 +40,13 @@ class ImageDeviationException extends AssertionFailedError
     public function getExpectedImage()
     {
         return $this->expectedImage;
+    }
+
+    /**
+     * Wrapper for getMessage() which is declared as final.
+     */
+    public function __toString()
+    {
+        return $this->message;
     }
 }

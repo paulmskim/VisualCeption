@@ -1,6 +1,7 @@
 <?php
 
-use Codeception\Module\ImageDeviationException;
+use Codeception\Exception\ImageDeviationException;
+use PHPUnit\Framework\ExpectationFailedException;
 
 class WriteCurrentImageCest
 {
@@ -11,14 +12,14 @@ class WriteCurrentImageCest
     public function writeCurrentImageFile(WebGuy $I, $scenario)
     {
         // expect failing the test
-        $I->amOnPage("/staticTimeChanged.html");
+        $I->amOnPage('/staticTimeChanged.html');
         try {
-            $I->dontSeeVisualChanges("currentImageIdentifier", "#theblock");
+            $I->dontSeeVisualChanges('currentImageIdentifier', '#theblock');
         } catch (ImageDeviationException $exception) {
             $currentImagePath = $exception->getCurrentImage();
 
             if (!is_file($exception->getCurrentImage())) {
-                throw new \PHPUnit_Framework_ExpectationFailedException("The screenshot was not saved successfully.");
+                throw new ExpectationFailedException('The screenshot was not saved successfully.');
             }
         }
     }

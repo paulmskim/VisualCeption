@@ -8,14 +8,14 @@ class MultipleAttributesCest
      */
     public function seeSameDivForMultipleSelectors(WebGuy $I, $scenario)
     {
-        $I->amOnPage("/multipleAttributes.html");
+        $I->amOnPage('/multipleAttributes.html');
         // class selector
-        $I->dontSeeVisualChanges("multipleAttributes", ".block");
+        $I->dontSeeVisualChanges('multipleAttributes', '.block');
         // attribute selector without value
-        $I->dontSeeVisualChanges("multipleAttributes", "[data-element]");
+        $I->dontSeeVisualChanges('multipleAttributes', '[data-element]');
         // attribute selector with single quotes
-        $I->dontSeeVisualChanges("multipleAttributes", "[data-element='myElement']");
+        $I->dontSeeVisualChanges('multipleAttributes', '[data-element="myElement"]');
         // attribute selector with double quotes
-        $I->dontSeeVisualChanges("multipleAttributes", '[data-element="myElement"]');
+        $I->dontSeeVisualChanges('multipleAttributes', '[data-element="myElement"]');
     }
 }

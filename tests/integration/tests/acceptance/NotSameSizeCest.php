@@ -8,7 +8,7 @@ class NotSameSizeCest
      */
     public function seeVisualChangesAfterSizeChanges(WebGuy $I, $scenario)
     {
-        $I->amOnPage("/redBlockBig.html");
-        $I->seeVisualChanges("getRedDiv", "div");
+        $I->amOnPage('/redBlockBig.html');
+        $I->seeVisualChanges('getRedDiv', 'div');
     }
 }

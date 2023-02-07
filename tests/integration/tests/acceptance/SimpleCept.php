@@ -10,8 +10,8 @@ if (file_exists($fileToDelete)) {
 $I = new WebGuy($scenario);
 $I->wantTo('check visual changes inside element');
 
-$I->amOnPage("/staticTime.html");
-$I->seeVisualChanges("SimpleBlock", "#theblock");
+$I->amOnPage('/staticTime.html');
+$I->seeVisualChanges('SimpleBlock', '#theblock');
 
-$I->amOnPage("/staticTimeChanged.html");
-$I->seeVisualChanges("SimpleBlock", "#theblock");
+$I->amOnPage('/staticTimeChanged.html');
+$I->seeVisualChanges('SimpleBlock', '#theblock');
