@@ -1,3 +1,7 @@
+# 3.0.0
+* Update Codeception to v3
+* Update php container to build from Dockerfile
+
 # 2.0.1
 * Remove minimum stability from composer
 
