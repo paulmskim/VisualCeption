@@ -1,3 +1,9 @@
+# 2.0.1
+* Remove minimum stability from composer
+
+# 2.0.0
+* Update version to match Codeception version
+
 # 1.0.4
 * Added support for multi session testing - #73
 * Fixed double quotes to not break JavaScript commands - #71
@@ -27,7 +33,7 @@
 * Hardcoded timeouts (`wait(1)`) replaced with corresponding waiter (`waitFor*`) methods
 * Added optional parameter `$deviation` to `seeVisualChanges` and `dontSeeVisualChanges`.
 * Added `getReferenceImageDir` method to return full path to reference images directory.
-* Added new report template `templToJpg.php`, 
+* Added new report template `templToJpg.php`,
 
 # 0.9.0
 
