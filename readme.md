@@ -4,8 +4,6 @@
 
 Visual regression tests for [Codeception](http://codeception.com/).
 
-[![Build Status](https://travis-ci.org/Codeception/VisualCeption.svg?branch=master)](https://travis-ci.org/Codeception/VisualCeption)
-
 This module can be used to compare the current representation of a website element with an expected. It was written on the shoulders of codeception and integrates in a very easy way.
 
 **WARNING** This module can reduce the execution speed of acceptance tests. Use it only for visual regression test suite and not for regular end to end testing.
@@ -39,18 +37,18 @@ Make sure you have php-imagick extension installed. Run `php -m` to see if imagi
 Then add VisualCeption to composer.json:
 
 ```
-composer require "codeception/visualception:*" --dev
+composer require "paulmskim/module-visualception:*" --dev
 ```
 
 ### Configuration
 
-To use the VisualCeption module you have to configure it. 
+To use the VisualCeption module you have to configure it.
 
 **Example Configuration**
 
 ```yaml
 modules:
-    enabled: 
+    enabled:
         - WebDriver:
             url: http://localhost.com
             browser: firefox
@@ -82,7 +80,7 @@ $I->dontSeeVisualChanges("uniqueIdentifier3", "elementId3", array("excludeElemen
 ```
 
 * **uniqueIdentifier** For comparing the images it is important to have a stable name. This is the corresponding name.
-* **elementId** It is possible to only compare a special div container. The element id can be passed. *You can use CSS locators*. 
+* **elementId** It is possible to only compare a special div container. The element id can be passed. *You can use CSS locators*.
 * **excludeElements** Optional parameter as string or an array of strings to exclude an element from the screenshot. Maybe there is an animated image in your test container, so you can ignore it. *You can use CSS locators*.
 * **$deviation** Optional parameter as float use if it is necessary to establish deviation coefficient other than configuration.
 
@@ -97,10 +95,10 @@ If you need more information about the test run please use the command line debu
 ## HTML Reports
 
 Enable Reports in config and use nice HTML output to see all failed visual tests with their image diffs on a page:
-   
+
 ```yaml
 modules:
-    enabled: 
+    enabled:
         - WebDriver:
             url: http://localhost.com
             browser: firefox
