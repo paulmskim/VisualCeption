@@ -1,7 +1,7 @@
 {
   "name": "paulmskim/module-visualception",
   "description": "Visual regression tests for Codeception",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "library",
   "homepage": "https://github.com/paulmskim/module-visualception",
   "license": "Apache-2.0",
