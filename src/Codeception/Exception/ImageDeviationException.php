@@ -45,7 +45,7 @@ class ImageDeviationException extends Exception
     /**
      * Wrapper for getMessage() which is declared as final.
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->message;
     }
