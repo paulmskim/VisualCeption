@@ -8,6 +8,7 @@ use Codeception\Exception\ImageDeviationException;
 use Codeception\Module as CodeceptionModule;
 use Codeception\Test\Descriptor;
 use RemoteWebDriver;
+use Facebook\WebDriver\WebDriverBy;
 use Codeception\TestInterface;
 
 /**
@@ -340,7 +341,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
     private function getDeviation($identifier, $elementID, array $excludeElements = [])
     {
         $coords = $this->getCoordinates($elementID);
-        $this->createScreenshot($identifier, $coords, $excludeElements);
+        $this->createScreenshot($identifier, $elementID, $coords, $excludeElements);
 
         $compareResult = $this->compare($identifier);
 
@@ -437,12 +438,13 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      * @throws \ImagickException
      *
      * @param string $identifier identifies your test object
+     * @param string $elementID DOM ID of the element, which should be screenshotted
      * @param array $coords Coordinates where the DOM element is located
      * @param array $excludeElements List of elements, which should not appear in the screenshot
      *
      * @return string Path of the current screenshot image
      */
-    private function createScreenshot($identifier, array $coords, array $excludeElements = [])
+    private function createScreenshot($identifier, $elementID, array $coords, array $excludeElements = [])
     {
         $screenShotDir = Configuration::outputDir() . 'debug/';
 
@@ -477,10 +479,9 @@ class VisualCeption extends CodeceptionModule implements MultiSession
             $fullShot->writeImage($elementPath);
 
         } else {
-            $screenshotBinary = $this->webDriver->takeScreenshot();
-
+            $element = $this->webDriver->findElement(WebDriverBy::cssSelector($elementID));
+            $screenshotBinary = $element->takeElementScreenshot();
             $screenShotImage->readimageblob($screenshotBinary);
-            $screenShotImage->cropImage((int) $coords['width'], (int) $coords['height'], (int) $coords['offset_x'], (int) $coords['offset_y']);
             $screenShotImage->writeImage($elementPath);
         }
 
