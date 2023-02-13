@@ -8,16 +8,18 @@ services:
     volumes:
       - ./:/project
     depends_on:
-      - phantomjs
+      - chrome
       - httpserver
     network_mode: host
-  phantomjs:
+  chrome:
     build:
       context: ./docker
-      dockerfile: phantomjs.docker
-    command: bash -c 'phantomjs --webdriver=4444 --ignore-ssl-errors=true'
+      dockerfile: chrome.docker
     ports:
       - '4444:4444'
+    environment:
+      SE_NODE_MAX_SESSIONS: 4
+      SE_NODE_OVERRIDE_MAX_SESSIONS: 'true'
   httpserver:
     build:
       context: ./docker
