@@ -14,25 +14,23 @@ This module can be used to compare the current representation of a website eleme
 
 ## How it works
 
-VisualCeption uses a combination of the "make a screenshot" feature in webdriver, imagick and native JavaScript to compare visual elements on a website. This comparison is done in five steps:
+VisualCeption uses a combination of the "make a screenshot" feature in WebDriver and Imagick to compare visual elements on a website. This comparison is done in three steps:
 
-1. **Take a screenshot** of the full page using webdriver.
-2. **Calculate the position** and size of the selected element using JavaScript.
-3. **Crop the element** out of the full screenshot using imagick.
-4. **Compare the element** with an older version of the screenshot that has been proofed as valid using imagick. If no previous image exists the current image will be used fur future comparions. As an effect of this approach the test has to be **run twice** before it works.
-5. If the deviation is too high **throw an exception** that is caught by Codeception.
+1. **Take a screenshot** of the element using WebDriver.
+2. **Compare the element** with an older version of the screenshot that has been proofed as valid using Imagick. If no previous image exists the current image will be used for future comparions. As an effect of this approach the test has to be **run twice** before it works.
+3. If the deviation is too high **throw an exception** that is caught by Codeception.
 
 ## Requirements
 
 VisualCeption needs the following components to run:
 
 * **Codeception** VisualCeption is a module for [Codeception](http://codeception.com/). It will need a running version of this tool.
-* **Imagick** For comparing two images VisualCeption is using the imagick library for php. For more information visit [php.net](http://www.php.net/manual/de/book.imagick.php) or the [installation guide](http://www.php.net/manual/en/imagick.setup.php).
+* **Imagick** For comparing two images VisualCeption is using the Imagick library for php. For more information visit [php.net](http://www.php.net/manual/de/book.imagick.php) or the [installation guide](http://www.php.net/manual/en/imagick.setup.php).
 * **WebDriver module** This tool only works with the webdriver module in Codeception at the moment.
 
 ## Installation
 
-Make sure you have php-imagick extension installed. Run `php -m` to see if imagick extension is enabled.
+Make sure you have php-imagick extension installed. Run `php -m` to see if Imagick extension is enabled.
 
 Then add VisualCeption to composer.json:
 
@@ -51,7 +49,7 @@ modules:
     enabled:
         - WebDriver:
             url: http://localhost.com
-            browser: firefox
+            browser: chrome
         - VisualCeption:
             maximumDeviation: 5                                   # deviation in percent
             saveCurrentImageIfFailure: true                       # if true, VisualCeption saves the current
@@ -101,7 +99,7 @@ modules:
     enabled:
         - WebDriver:
             url: http://localhost.com
-            browser: firefox
+            browser: chrome
         - VisualCeption:
             report: true
             templateFile: "/report/template2.php" # Absolute path or relative from module dir to report template. Default "/report/template.php"
