@@ -340,8 +340,7 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      */
     private function getDeviation($identifier, $elementID, array $excludeElements = [])
     {
-        $coords = $this->getCoordinates($elementID);
-        $this->createScreenshot($identifier, $elementID, $coords, $excludeElements);
+        $this->createScreenshot($identifier, $elementID, $excludeElements);
 
         $compareResult = $this->compare($identifier);
 
@@ -354,37 +353,6 @@ class VisualCeption extends CodeceptionModule implements MultiSession
             "deviationImage" => $compareResult[0],
             "currentImage"   => $compareResult['currentImage'],
         ];
-    }
-
-    /**
-     * Find the position and proportion of a DOM element, specified by it's ID.
-     * Used native JavaScript.
-     *
-     * @param string $elementId DOM ID of the element, which should be screenshotted
-     *
-     * @return array coordinates of the element
-     */
-    private function getCoordinates($elementId)
-    {
-        if (is_null($elementId)) {
-            $elementId = 'body';
-        } else {
-            // escape double quotes to not break JavaScript commands
-            $elementId = str_replace('"', '\\"', $elementId);
-        }
-
-        $elementExists = (bool)$this->webDriver->executeScript('return document.querySelectorAll( "' . $elementId . '" ).length > 0;');
-
-        if (!$elementExists) {
-            throw new \Exception("The element you want to examine ('{$elementId}') was not found.");
-        }
-
-        $imageCoords = $this->webDriver->executeScript('
-              var rect = document.querySelector( "' . $elementId . '" ).getBoundingClientRect();
-              return {"offset_x": rect.left, "offset_y": rect.top, "width": rect.width, "height": rect.height};
-        ');
-
-        return $imageCoords;
     }
 
     /**
@@ -439,12 +407,11 @@ class VisualCeption extends CodeceptionModule implements MultiSession
      *
      * @param string $identifier identifies your test object
      * @param string $elementID DOM ID of the element, which should be screenshotted
-     * @param array $coords Coordinates where the DOM element is located
      * @param array $excludeElements List of elements, which should not appear in the screenshot
      *
      * @return string Path of the current screenshot image
      */
-    private function createScreenshot($identifier, $elementID, array $coords, array $excludeElements = [])
+    private function createScreenshot($identifier, $elementID, array $excludeElements = [])
     {
         $screenShotDir = Configuration::outputDir() . 'debug/';
 
@@ -463,21 +430,23 @@ class VisualCeption extends CodeceptionModule implements MultiSession
 
             $itr = $height / $viewportHeight;
 
-            for ($i = 0; $i < (int) $itr; $i++) {
-                $screenshotBinary = $this->webDriver->takeScreenshot();
-                $screenShotImage->readimageblob($screenshotBinary);
-                $this->webDriver->executeScript("window.scrollBy(0, {$viewportHeight});");
-            }
-
             $screenshotBinary = $this->webDriver->takeScreenshot();
             $screenShotImage->readimageblob($screenshotBinary);
-            $heightOffset = $viewportHeight - ($height - (intval($itr) * $viewportHeight));
-            $screenShotImage->cropImage(0, 0, 0, $heightOffset * $devicePixelRatio);
+
+            for ($i = 1; $i < ceil($itr); $i++) {
+                $this->webDriver->executeScript("window.scrollBy(0, {$viewportHeight});");
+                $screenshotBinary = $this->webDriver->takeScreenshot();
+                $screenShotImage->readimageblob($screenshotBinary);
+            }
+
+            if (!is_int($itr)) {
+                $heightOffset = $viewportHeight - ($height - (intval($itr) * $viewportHeight));
+                $screenShotImage->cropImage(0, 0, 0, $heightOffset * $devicePixelRatio);
+            }
 
             $screenShotImage->resetIterator();
             $fullShot = $screenShotImage->appendImages(true);
             $fullShot->writeImage($elementPath);
-
         } else {
             $element = $this->webDriver->findElement(WebDriverBy::cssSelector($elementID));
             $screenshotBinary = $element->takeElementScreenshot();
