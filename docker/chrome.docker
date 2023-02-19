@@ -1,1 +1,1 @@
-FROM seleniarm/standalone-chromium:4.1.1-alpha-20220119
+FROM selenium/standalone-chrome-debug:latest
