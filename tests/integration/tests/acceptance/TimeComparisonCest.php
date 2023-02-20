@@ -21,12 +21,12 @@ class TimeComparisonCest
     public function seeVisualChangesAndHideElement(WebGuy $I, $scenario)
     {
         $I->amOnPage('/staticTimeChanged.html');
-        $I->seeVisualChanges('hideTheIntro', '#theblock');
+        $I->seeVisualChanges('hideTheIntro', 'body', ['#intro']);
     }
 
     public function dontSeeVisualChangesAndHideElement(WebGuy $I, $scenario)
     {
         $I->amOnPage('/staticTimeChanged.html');
-        $I->dontSeeVisualChanges('hideTheBlock', '#intro');
+        $I->dontSeeVisualChanges('hideTheBlock', 'body', ['#theblock']);
     }
 }

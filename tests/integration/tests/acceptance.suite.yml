@@ -6,7 +6,7 @@ modules:
     config:
         WebDriver:
             url: http://httpserver:8080
-            browser: phantomjs
+            browser: chrome
             capabilities:
                 webStorageEnabled: true
         VisualCeption:
@@ -19,6 +19,6 @@ env:
         modules:
             config:
                 WebDriver:
-                    browser: phantomjs
+                    browser: chrome
                     host: localhost
                     port: 4444

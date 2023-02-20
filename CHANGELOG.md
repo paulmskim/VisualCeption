@@ -1,3 +1,7 @@
+# 4.0.0
+* Update Codeception to v4
+* Use Codeception module webdriver for tests
+
 # 3.0.0
 * Update Codeception to v3
 * Update php container to build from Dockerfile
